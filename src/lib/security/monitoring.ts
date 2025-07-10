@@ -49,7 +49,19 @@ export type SecurityEventType =
   | 'invalid_api_key'
   | 'api_request_success'
   | 'api_request_failed'
-  | 'security_audit_completed';
+  | 'security_audit_completed'
+  | 'incident_detected'
+  | 'incident_resolved'
+  | 'alert_triggered'
+  | 'alert_acknowledged'
+  | 'threat_detected'
+  | 'vulnerability_found'
+  | 'security_config_changed'
+  | 'compliance_violation'
+  | 'forensic_capture'
+  | 'system_health_warning'
+  | 'security_scan_completed'
+  | 'automated_response_triggered';
 
 export interface SecurityEvent {
   type: SecurityEventType;
