@@ -1,6 +1,6 @@
 export default {
   // Site metadata
-  name: "Nostr Creator Economy",
+  name: "Paper Crate",
   description:
     "A decentralized platform connecting businesses with content creators for authentic social media campaigns. Powered by Bitcoin micropayments and the Nostr protocol.",
 
@@ -52,12 +52,12 @@ export default {
     // Additional meta tags
     meta: {
       "og:type": "website",
-      "og:title": "Nostr Creator Economy - Connect Businesses with Creators",
+      "og:title": "Paper Crate - Connect Businesses with Creators",
       "og:description":
         "A decentralized platform connecting businesses with content creators for authentic social media campaigns. Powered by Bitcoin micropayments and the Nostr protocol.",
       "twitter:card": "summary_large_image",
-      "twitter:title": "Nostr Creator Economy",
-      "twitter:description": "Decentralized influencer marketing on Nostr with Bitcoin payments",
+      "twitter:title": "Paper Crate",
+      "twitter:description": "Decentralized marketing on Nostr with Bitcoin payments",
     },
   },
 };

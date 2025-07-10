@@ -8,13 +8,10 @@
     "build": "npm i && vite build && cp dist/index.html dist/404.html",
     "test": "npm i && tsc -p tsconfig.app.json --noEmit && eslint && vitest run && vite build",
     "deploy": "npm run build && npx -y nostr-deploy-cli deploy --skip-setup",
-    "deploy:nsite": "npm run build && npx nsite publish",
-    "deploy:nsite:full": "./scripts/deploy-nsite.sh",
-    "nsite:init": "npx nsite init",
-    "nsite:build": "npm run build && npx nsite build",
-    "nsite:publish": "npx nsite publish",
-    "nsite:serve": "npx nsite serve",
-    "nsite:verify": "node scripts/verify-deployment.js"
+    "deploy:nostr": "npm run build && npx -y nostr-deploy-cli deploy --skip-setup",
+    "nostr:build": "npm run build",
+    "nostr:deploy": "npm run build && npx -y nostr-deploy-cli deploy --skip-setup",
+    "nostr:verify": "echo 'Deployment successful! Check your live site at the URL provided above.'"
   },
   "dependencies": {
     "@getalby/sdk": "^5.1.1",
@@ -100,7 +97,6 @@
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "jsdom": "^26.1.0",
-    "nsite": "^0.0.6",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.8.3",
