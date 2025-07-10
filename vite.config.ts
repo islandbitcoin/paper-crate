@@ -26,12 +26,17 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "buffer": "buffer",
+      "stream": "stream-browserify", 
+      "events": "events",
+      "util": "util",
     },
   },
   define: {
     global: 'globalThis',
+    Buffer: ['buffer', 'Buffer'],
   },
   optimizeDeps: {
-    include: ['buffer', 'stream-browserify'],
+    include: ['buffer', 'events', 'util', 'stream-browserify'],
   },
 }));

@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import { Buffer } from 'buffer';
+
+// Make Buffer available in test environment
+if (typeof global !== 'undefined' && !global.Buffer) {
+  global.Buffer = Buffer;
+}
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

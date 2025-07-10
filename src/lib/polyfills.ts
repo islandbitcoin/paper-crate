@@ -1,4 +1,19 @@
 /**
+ * Browser polyfills for Node.js modules and missing APIs
+ */
+import { Buffer } from 'buffer';
+
+// Make Buffer available globally
+if (typeof globalThis !== 'undefined') {
+  (globalThis as typeof globalThis & { Buffer: typeof Buffer }).Buffer = Buffer;
+}
+
+if (typeof window !== 'undefined') {
+  (window as typeof window & { Buffer: typeof Buffer; global: typeof window }).Buffer = Buffer;
+  (window as typeof window & { Buffer: typeof Buffer; global: typeof window }).global = window;
+}
+
+/**
  * Polyfill for AbortSignal.any()
  * 
  * AbortSignal.any() creates an AbortSignal that will be aborted when any of the
