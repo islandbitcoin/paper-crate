@@ -30,7 +30,26 @@ export type SecurityEventType =
   | 'privacy_settings_updated'
   | 'data_access'
   | 'data_export'
-  | 'data_deletion';
+  | 'data_deletion'
+  | 'security_headers_applied'
+  | 'security_headers_failed'
+  | 'csp_violation'
+  | 'blocked_request'
+  | 'secure_request_success'
+  | 'secure_request_failed'
+  | 'missing_security_headers'
+  | 'suspicious_content_type'
+  | 'websocket_connected'
+  | 'websocket_error'
+  | 'suspicious_websocket_message'
+  | 'relay_validated'
+  | 'relay_validation_failed'
+  | 'relay_rate_limit_exceeded'
+  | 'api_rate_limit_exceeded'
+  | 'invalid_api_key'
+  | 'api_request_success'
+  | 'api_request_failed'
+  | 'security_audit_completed';
 
 export interface SecurityEvent {
   type: SecurityEventType;
