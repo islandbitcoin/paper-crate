@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Settings, LogOut, Zap, Building2, Users } from 'lucide-react';
+import { User, Settings, LogOut, Zap, Building2, Users, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -8,15 +8,17 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLoginActions } from '@/hooks/useLoginActions';
 import { genUserName } from '@/lib/genUserName';
 import { LoginArea } from '@/components/auth/LoginArea';
+import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderProps {
   currentRole?: 'business' | 'creator';
   onRoleChange?: (role: 'business' | 'creator') => void;
 }
 
-export function Header({ currentRole, onRoleChange }: HeaderProps) {
+export function Header({ currentRole: _currentRole, onRoleChange }: HeaderProps) {
   const { user } = useCurrentUser();
   const { logout } = useLoginActions();
+  const { user: authUser, role: authRole, switchRole } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const { metadata } = useCurrentUser();
@@ -48,26 +50,42 @@ export function Header({ currentRole, onRoleChange }: HeaderProps) {
         </div>
 
         {/* Role Switcher (when logged in) */}
-        {user && currentRole && onRoleChange && (
+        {authUser && authRole && (
           <div className="hidden md:flex items-center space-x-2">
-            <Button
-              variant={currentRole === 'creator' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onRoleChange('creator')}
-              className="flex items-center space-x-2"
-            >
-              <Users className="h-4 w-4" />
-              <span>Creator</span>
-            </Button>
-            <Button
-              variant={currentRole === 'business' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onRoleChange('business')}
-              className="flex items-center space-x-2"
-            >
-              <Building2 className="h-4 w-4" />
-              <span>Business</span>
-            </Button>
+            {(authRole === 'creator' || authRole === 'both') && (
+              <Button
+                variant={authRole === 'creator' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  switchRole('creator');
+                  onRoleChange?.('creator');
+                }}
+                className="flex items-center space-x-2"
+              >
+                <Users className="h-4 w-4" />
+                <span>Creator</span>
+              </Button>
+            )}
+            {(authRole === 'business' || authRole === 'both') && (
+              <Button
+                variant={authRole === 'business' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  switchRole('business');
+                  onRoleChange?.('business');
+                }}
+                className="flex items-center space-x-2"
+              >
+                <Building2 className="h-4 w-4" />
+                <span>Business</span>
+              </Button>
+            )}
+            {authRole === 'both' && (
+              <Badge variant="secondary" className="ml-2">
+                <Shield className="h-3 w-3 mr-1" />
+                Dual Role
+              </Badge>
+            )}
           </div>
         )}
 
@@ -107,27 +125,37 @@ export function Header({ currentRole, onRoleChange }: HeaderProps) {
                 <DropdownMenuSeparator />
 
                 {/* Role Switcher (mobile) */}
-                {currentRole && onRoleChange && (
+                {authUser && authRole && (
                   <>
                     <div className="md:hidden">
-                      <DropdownMenuItem onClick={() => onRoleChange('creator')}>
-                        <Users className="h-4 w-4 mr-2" />
-                        Creator Dashboard
-                        {currentRole === 'creator' && (
-                          <Badge variant="secondary" className="ml-auto text-xs">
-                            Active
-                          </Badge>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onRoleChange('business')}>
-                        <Building2 className="h-4 w-4 mr-2" />
-                        Business Dashboard
-                        {currentRole === 'business' && (
-                          <Badge variant="secondary" className="ml-auto text-xs">
-                            Active
-                          </Badge>
-                        )}
-                      </DropdownMenuItem>
+                      {(authRole === 'creator' || authRole === 'both') && (
+                        <DropdownMenuItem onClick={() => {
+                          switchRole('creator');
+                          onRoleChange?.('creator');
+                        }}>
+                          <Users className="h-4 w-4 mr-2" />
+                          Creator Dashboard
+                          {authRole === 'creator' && (
+                            <Badge variant="secondary" className="ml-auto text-xs">
+                              Active
+                            </Badge>
+                          )}
+                        </DropdownMenuItem>
+                      )}
+                      {(authRole === 'business' || authRole === 'both') && (
+                        <DropdownMenuItem onClick={() => {
+                          switchRole('business');
+                          onRoleChange?.('business');
+                        }}>
+                          <Building2 className="h-4 w-4 mr-2" />
+                          Business Dashboard
+                          {authRole === 'business' && (
+                            <Badge variant="secondary" className="ml-auto text-xs">
+                              Active
+                            </Badge>
+                          )}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                     </div>
                   </>

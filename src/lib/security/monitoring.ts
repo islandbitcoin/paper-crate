@@ -11,6 +11,11 @@ export type SecurityEventType =
   | 'rate_limit_exceeded'
   | 'invalid_input'
   | 'auth_failed'
+  | 'auth_success'
+  | 'auth_logout'
+  | 'auth_timeout'
+  | 'auth_role_switch'
+  | 'permission_denied'
   | 'suspicious_activity';
 
 export interface SecurityEvent {
@@ -211,6 +216,43 @@ export function logRateLimitExceeded(
     type: 'rate_limit_exceeded',
     userId,
     details: { operation },
+    severity: 'medium',
+  });
+}
+
+export function logAuthSuccess(
+  userId: string,
+  method: string
+): void {
+  securityMonitor.logEvent({
+    type: 'auth_success',
+    userId,
+    details: { method },
+    severity: 'low',
+  });
+}
+
+export function logAuthFailure(
+  userId: string | undefined,
+  reason: string
+): void {
+  securityMonitor.logEvent({
+    type: 'auth_failed',
+    userId,
+    details: { reason },
+    severity: 'medium',
+  });
+}
+
+export function logPermissionDenied(
+  userId: string,
+  permission: string,
+  resource?: string
+): void {
+  securityMonitor.logEvent({
+    type: 'permission_denied',
+    userId,
+    details: { permission, resource },
     severity: 'medium',
   });
 }

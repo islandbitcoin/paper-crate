@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/useToast';
 import { formatSats } from '@/lib/campaign-utils';
 import { sanitizeTitle, sanitizeDescription } from '@/lib/security/sanitization';
 import { isValidBudget, isValidPlatform } from '@/lib/security/validation';
+import { useAuth } from '@/hooks/useAuth';
 
 const campaignSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title too long')
@@ -57,6 +58,7 @@ const PLATFORM_OPTIONS = [
 
 export function CreateCampaignDialog({ open, onOpenChange }: CreateCampaignDialogProps) {
   const { user } = useCurrentUser();
+  const { hasPermission } = useAuth();
   const { mutate: createEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['nostr']);
@@ -83,6 +85,16 @@ export function CreateCampaignDialog({ open, onOpenChange }: CreateCampaignDialo
       toast({
         title: 'Error',
         description: 'You must be logged in to create a campaign.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check permission to create campaigns
+    if (!hasPermission('campaign.create')) {
+      toast({
+        title: 'Permission Denied',
+        description: 'You do not have permission to create campaigns.',
         variant: 'destructive',
       });
       return;

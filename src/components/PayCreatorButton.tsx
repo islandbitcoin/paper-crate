@@ -31,6 +31,7 @@ import {
 import { logPaymentAttempt, logPaymentFailure } from '@/lib/security/monitoring';
 import { SECURITY_CONFIG } from '@/lib/security/config';
 import type { PerformanceReport } from '@/stores/campaignStore';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PayCreatorButtonProps {
   report: PerformanceReport;
@@ -50,6 +51,7 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
   const { toast } = useToast();
   const { mutate: publishEvent } = useNostrPublish();
   const { user } = useCurrentUser();
+  const { hasPermission } = useAuth();
   const updateCampaignSpent = useCampaignStore(state => state.updateCampaignSpent);
   
   // Get creator's Lightning address
@@ -193,6 +195,16 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
 
   const handlePayment = async () => {
     if (!invoice && !isTestMode) return;
+
+    // Check payment permission
+    if (!hasPermission('report.pay')) {
+      toast({
+        title: 'Permission Denied',
+        description: 'You do not have permission to make payments.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Log payment attempt
     logPaymentAttempt(

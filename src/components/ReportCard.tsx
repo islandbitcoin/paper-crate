@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/useToast';
 import { useCampaignStore } from '@/stores/campaignStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { sanitizePlainText } from '@/lib/security/sanitization';
+import { useAuth } from '@/hooks/useAuth';
+import { PermissionGuard } from './PermissionGuard';
 
 interface ReportCardProps {
   report: PerformanceReport;
@@ -20,6 +22,7 @@ interface ReportCardProps {
 
 export function ReportCard({ report, showPayButton = false, showApproveButton = false }: ReportCardProps) {
   const { user } = useCurrentUser();
+  const { validatePermission } = useAuth();
   const { mutate: publishEvent } = useNostrPublish();
   const { toast } = useToast();
   const updateReport = useCampaignStore(state => state.updateReport);
@@ -33,6 +36,17 @@ export function ReportCard({ report, showPayButton = false, showApproveButton = 
   
   const handleApprove = () => {
     if (!user) return;
+    
+    // Validate permission
+    const validation = validatePermission('report.approve', report.businessPubkey);
+    if (!validation.allowed) {
+      toast({
+        title: 'Permission Denied',
+        description: validation.reason || 'You cannot approve this report.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     // Update local state
     updateReport(report.id, { verified: true });
@@ -162,23 +176,27 @@ export function ReportCard({ report, showPayButton = false, showApproveButton = 
 
         {/* Approve Button - Only show for business users on unverified reports */}
         {showApproveButton && user && !report.verified && (
-          <div className="pt-2">
-            <Button 
-              onClick={handleApprove}
-              className="w-full"
-              variant="outline"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Approve Report
-            </Button>
-          </div>
+          <PermissionGuard permission="report.approve" resourcePubkey={report.businessPubkey}>
+            <div className="pt-2">
+              <Button 
+                onClick={handleApprove}
+                className="w-full"
+                variant="outline"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Approve Report
+              </Button>
+            </div>
+          </PermissionGuard>
         )}
 
         {/* Pay Creator Button - Only show for business users on verified reports */}
         {showPayButton && user && report.verified && !report.paymentHash && (
-          <div className="pt-2">
-            <PayCreatorButton report={report} campaignId={campaignId} />
-          </div>
+          <PermissionGuard permission="report.pay" resourcePubkey={report.businessPubkey}>
+            <div className="pt-2">
+              <PayCreatorButton report={report} campaignId={campaignId} />
+            </div>
+          </PermissionGuard>
         )}
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Users, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -10,9 +10,12 @@ import { Header } from '@/components/Header';
 import { OnboardingFlow } from '@/components/OnboardingFlow';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useAuth } from '@/hooks/useAuth';
+import { RoleGuard } from '@/components/PermissionGuard';
 
 export function Dashboard() {
   const { user, metadata } = useCurrentUser();
+  const { role: authRole } = useAuth();
   const [selectedRole, setSelectedRole] = useState<'business' | 'creator'>('creator');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -23,7 +26,7 @@ export function Dashboard() {
   const needsOnboarding = user && (!metadata?.name || !metadata?.about) && !onboardingCompleted[user.pubkey];
 
   // Show onboarding for logged in users who haven't completed profile or skipped onboarding
-  React.useEffect(() => {
+  useEffect(() => {
     if (needsOnboarding) {
       setShowOnboarding(true);
     } else if (user && showOnboarding) {
@@ -31,6 +34,13 @@ export function Dashboard() {
       setShowOnboarding(false);
     }
   }, [needsOnboarding, user, showOnboarding]);
+
+  // Set selected role based on auth role
+  useEffect(() => {
+    if (authRole && authRole !== 'both') {
+      setSelectedRole(authRole);
+    }
+  }, [authRole]);
 
   // Handle onboarding completion or skip
   const handleOnboardingClose = (_completed: boolean) => {
@@ -222,11 +232,15 @@ export function Dashboard() {
 
       <Tabs value={selectedRole} onValueChange={(value) => setSelectedRole(value as 'business' | 'creator')}>
         <TabsContent value="creator" className="mt-0">
-          <CreatorDashboard />
+          <RoleGuard role="creator">
+            <CreatorDashboard />
+          </RoleGuard>
         </TabsContent>
 
         <TabsContent value="business" className="mt-0">
-          <BusinessDashboard />
+          <RoleGuard role="business">
+            <BusinessDashboard />
+          </RoleGuard>
         </TabsContent>
       </Tabs>
 

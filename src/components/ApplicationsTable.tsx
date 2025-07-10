@@ -10,9 +10,10 @@ import { genUserName } from '@/lib/genUserName';
 import { getStatusColor, getPlatformIcon } from '@/lib/campaign-utils';
 import type { CampaignApplication } from '@/stores/campaignStore';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
+import { PermissionGuard } from '@/components/PermissionGuard';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ApplicationsTableProps {
   applications: CampaignApplication[];
@@ -21,13 +22,19 @@ interface ApplicationsTableProps {
 export function ApplicationsTable({ applications }: ApplicationsTableProps) {
   const [_selectedApplication, setSelectedApplication] = useState<CampaignApplication | null>(null);
   const { mutateAsync: createEvent } = useNostrPublish();
-  const { user } = useCurrentUser();
+  const { validatePermission } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleApprove = async (application: CampaignApplication) => {
-    if (!user) {
-      toast({ title: 'Error', description: 'You must be logged in to approve applications.', variant: 'destructive' });
+    // Validate permission
+    const validation = validatePermission('application.approve', application.businessPubkey);
+    if (!validation.allowed) {
+      toast({ 
+        title: 'Permission Denied', 
+        description: validation.reason || 'You cannot approve this application.', 
+        variant: 'destructive' 
+      });
       return;
     }
 
@@ -59,8 +66,14 @@ export function ApplicationsTable({ applications }: ApplicationsTableProps) {
   };
 
   const handleReject = async (application: CampaignApplication) => {
-    if (!user) {
-      toast({ title: 'Error', description: 'You must be logged in to reject applications.', variant: 'destructive' });
+    // Validate permission
+    const validation = validatePermission('application.reject', application.businessPubkey);
+    if (!validation.allowed) {
+      toast({ 
+        title: 'Permission Denied', 
+        description: validation.reason || 'You cannot reject this application.', 
+        variant: 'destructive' 
+      });
       return;
     }
 
@@ -207,16 +220,18 @@ function ApplicationRow({ application, onApprove, onReject, onView }: Applicatio
               View Details
             </DropdownMenuItem>
             {application.status === 'pending' && (
-              <>
-                <DropdownMenuItem onClick={() => onApprove(application)}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Approve
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onReject(application)}>
-                  <X className="h-4 w-4 mr-2" />
-                  Reject
-                </DropdownMenuItem>
-              </>
+              <PermissionGuard permission="application.approve" resourcePubkey={application.businessPubkey}>
+                <>
+                  <DropdownMenuItem onClick={() => onApprove(application)}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Approve
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onReject(application)}>
+                    <X className="h-4 w-4 mr-2" />
+                    Reject
+                  </DropdownMenuItem>
+                </>
+              </PermissionGuard>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
