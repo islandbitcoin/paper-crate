@@ -92,7 +92,12 @@ export function sanitizeText(text: string, maxLength = 1000): string {
   
   // Remove control characters and trim
   let sanitized = text
-    .replace(/[\u0000-\u001F\u007F]/g, '') // Remove control characters
+    .split('')
+    .filter(char => {
+      const code = char.charCodeAt(0);
+      return code >= 32 && code !== 127; // Allow printable characters only
+    })
+    .join('')
     .trim();
   
   // Limit length

@@ -15,14 +15,19 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { useCreatorApplications } from '@/hooks/useCampaignApplications';
 import { formatSats, calculateEarnings } from '@/lib/campaign-utils';
+import { sanitizeUrl, sanitizePlainText } from '@/lib/security/sanitization';
+import { isValidSocialUrl, isValidPaymentAmount } from '@/lib/security/validation';
 
 const reportSchema = z.object({
   campaignCoordinate: z.string().min(1, 'Please select a campaign'),
   platform: z.string().min(1, 'Platform is required'),
-  postUrl: z.string().url('Please enter a valid URL'),
+  postUrl: z.string().url('Please enter a valid URL')
+    .transform(val => sanitizeUrl(val))
+    .refine(val => isValidSocialUrl(val), 'URL must be from a supported social media platform'),
   nostrEventId: z.string().optional(),
   metrics: z.record(z.number().min(0)),
-  notes: z.string().optional(),
+  notes: z.string().optional()
+    .transform(val => val ? sanitizePlainText(val) : val),
 });
 
 type ReportForm = z.infer<typeof reportSchema>;
@@ -111,6 +116,16 @@ export function CreateReportDialog({ open, onOpenChange }: CreateReportDialogPro
     };
 
     const amountClaimed = calculateEarnings(metrics, placeholderRates);
+    
+    // Validate payment amount
+    if (!isValidPaymentAmount(amountClaimed)) {
+      toast({
+        title: 'Invalid Amount',
+        description: `Calculated amount ${amountClaimed} sats is outside allowed range`,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Format metrics for tag
     const metricsStr = Object.entries(metrics)

@@ -18,11 +18,16 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { formatSats } from '@/lib/campaign-utils';
+import { sanitizeTitle, sanitizeDescription } from '@/lib/security/sanitization';
+import { isValidBudget, isValidPlatform } from '@/lib/security/validation';
 
 const campaignSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
-  description: z.string().min(1, 'Description is required').max(500, 'Description too long'),
-  budget: z.number().min(1000, 'Minimum budget is 1000 sats'),
+  title: z.string().min(1, 'Title is required').max(100, 'Title too long')
+    .transform(val => sanitizeTitle(val)),
+  description: z.string().min(1, 'Description is required').max(500, 'Description too long')
+    .transform(val => sanitizeDescription(val)),
+  budget: z.number().min(1000, 'Minimum budget is 1000 sats')
+    .refine(val => isValidBudget(val), 'Budget must be between 1,000 and 10,000,000 sats'),
   rateLike: z.number().min(0, 'Rate must be positive'),
   rateRepost: z.number().min(0, 'Rate must be positive'),
   rateZap: z.number().min(0, 'Rate must be positive'),
@@ -87,6 +92,17 @@ export function CreateCampaignDialog({ open, onOpenChange }: CreateCampaignDialo
       toast({
         title: 'Error',
         description: 'Please select at least one platform.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Validate platforms
+    const invalidPlatforms = selectedPlatforms.filter(p => !isValidPlatform(p));
+    if (invalidPlatforms.length > 0) {
+      toast({
+        title: 'Invalid Platforms',
+        description: `Invalid platforms: ${invalidPlatforms.join(', ')}`,
         variant: 'destructive',
       });
       return;

@@ -10,6 +10,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { useCampaignStore } from '@/stores/campaignStore';
 import { useQueryClient } from '@tanstack/react-query';
+import { sanitizePlainText } from '@/lib/security/sanitization';
 
 interface ReportCardProps {
   report: PerformanceReport;
@@ -136,7 +137,7 @@ export function ReportCard({ report, showPayButton = false, showApproveButton = 
           <div>
             <h4 className="text-sm font-medium mb-2">Notes</h4>
             <p className="text-sm text-muted-foreground">
-              {report.notes}
+              {sanitizePlainText(report.notes)}
             </p>
           </div>
         )}

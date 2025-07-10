@@ -2,19 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { useCampaignStore, type PerformanceReport } from '@/stores/campaignStore';
+import { validateReportEvent, validatePaymentEvent, validateNostrEvent } from '@/lib/security/nostr-validation';
 
-function validateReportEvent(event: NostrEvent): boolean {
-  if (event.kind !== 3387) return false;
-
-  const requiredTags = ['a', 'p', 'platform', 'post_url', 'metrics', 'amount_claimed', 't'];
-
-  for (const tagName of requiredTags) {
-    const tag = event.tags.find(([name]) => name === tagName);
-    if (!tag || !tag[1]) return false;
-  }
-
-  return true;
-}
+// Removed local validateReportEvent - now using the secure version from nostr-validation.ts
 
 function eventToReport(event: NostrEvent): PerformanceReport {
   const getTag = (name: string) => event.tags.find(([n]) => n === name)?.[1] || '';
@@ -133,6 +123,12 @@ export function useCreatorReports(creatorPubkey?: string) {
       // Create a map of report IDs to verification status
       const verificationMap = new Map<string, boolean>();
       verificationEvents.forEach(event => {
+        // Validate event signature and timestamp
+        if (!validateNostrEvent(event)) {
+          console.warn('Invalid verification event:', event.id);
+          return;
+        }
+        
         const reportId = event.tags.find(([name]) => name === 'e')?.[1];
         if (reportId) {
           try {
@@ -149,6 +145,12 @@ export function useCreatorReports(creatorPubkey?: string) {
       // Create a map of report IDs to payment hashes
       const paymentMap = new Map<string, string>();
       paymentEvents.forEach(event => {
+        // Validate payment event
+        if (!validatePaymentEvent(event)) {
+          console.warn('Invalid payment event:', event.id);
+          return;
+        }
+        
         const reportId = event.tags.find(([name]) => name === 'e')?.[1];
         const preimage = event.tags.find(([name]) => name === 'preimage')?.[1];
         if (reportId && preimage) {
@@ -217,6 +219,12 @@ export function useBusinessReports(businessPubkey?: string) {
       // Create a map of report IDs to verification status
       const verificationMap = new Map<string, boolean>();
       verificationEvents.forEach(event => {
+        // Validate event signature and timestamp
+        if (!validateNostrEvent(event)) {
+          console.warn('Invalid verification event:', event.id);
+          return;
+        }
+        
         const reportId = event.tags.find(([name]) => name === 'e')?.[1];
         if (reportId) {
           try {
@@ -233,6 +241,12 @@ export function useBusinessReports(businessPubkey?: string) {
       // Create a map of report IDs to payment hashes
       const paymentMap = new Map<string, string>();
       paymentEvents.forEach(event => {
+        // Validate payment event
+        if (!validatePaymentEvent(event)) {
+          console.warn('Invalid payment event:', event.id);
+          return;
+        }
+        
         const reportId = event.tags.find(([name]) => name === 'e')?.[1];
         const preimage = event.tags.find(([name]) => name === 'preimage')?.[1];
         if (reportId && preimage) {

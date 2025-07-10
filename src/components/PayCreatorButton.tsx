@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Zap, Loader2, Wallet, TestTube } from 'lucide-react';
+import { Zap, Loader2, Wallet, TestTube, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,9 +19,17 @@ import { useWebLN } from '@/hooks/useWebLN';
 import { useTestMode } from '@/hooks/useTestMode';
 import { useToast } from '@/hooks/useToast';
 import { useAuthor } from '@/hooks/useAuthor';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCampaignStore } from '@/stores/campaignStore';
 import { formatSats } from '@/lib/campaign-utils';
+import { 
+  validateLightningAddress, 
+  validateLightningInvoice,
+  buildLightningAddressUrl 
+} from '@/lib/security/lightning-validation';
+import { logPaymentAttempt, logPaymentFailure } from '@/lib/security/monitoring';
+import { SECURITY_CONFIG } from '@/lib/security/config';
 import type { PerformanceReport } from '@/stores/campaignStore';
 
 interface PayCreatorButtonProps {
@@ -41,6 +49,7 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
   const { isTestMode, addSimulatedPayment } = useTestMode();
   const { toast } = useToast();
   const { mutate: publishEvent } = useNostrPublish();
+  const { user } = useCurrentUser();
   const updateCampaignSpent = useCampaignStore(state => state.updateCampaignSpent);
   
   // Get creator's Lightning address
@@ -67,53 +76,116 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
       return;
     }
 
+    // Validate Lightning address first
+    const addressValidation = validateLightningAddress(lightningAddress);
+    if (!addressValidation.valid) {
+      toast({
+        title: 'Invalid Lightning Address',
+        description: addressValidation.error || 'The Lightning address format is invalid.',
+        variant: 'destructive',
+      });
+      logPaymentFailure(user?.pubkey || '', report.amountClaimed, 'Invalid Lightning address');
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      // Extract the domain and username from Lightning address
-      let domain, username;
+      let invoiceUrl: string | null = null;
       
-      if (lightningAddress.includes('@')) {
+      if (lightningAddress.includes('@') && addressValidation.username && addressValidation.domain) {
         // lud16 format: username@domain
-        [username, domain] = lightningAddress.split('@');
+        invoiceUrl = buildLightningAddressUrl(addressValidation.username, addressValidation.domain);
+        if (!invoiceUrl) {
+          throw new Error('Failed to build Lightning address URL');
+        }
       } else if (lightningAddress.startsWith('https://')) {
         // lud06 format: already a URL
-        const response = await fetch(lightningAddress);
-        const data = await response.json();
-        
-        if (data.callback) {
-          // Request invoice with amount
-          const invoiceResponse = await fetch(`${data.callback}?amount=${report.amountClaimed * 1000}`);
-          const invoiceData = await invoiceResponse.json();
-          setInvoice(invoiceData.pr);
-        }
-        return;
+        invoiceUrl = lightningAddress;
       }
       
-      // For lud16, construct the .well-known URL
-      if (domain && username) {
-        const lnurlResponse = await fetch(`https://${domain}/.well-known/lnurlp/${username}`);
-        const lnurlData = await lnurlResponse.json();
-        
-        if (lnurlData.callback) {
-          // Request invoice with amount in millisats
-          const invoiceResponse = await fetch(`${lnurlData.callback}?amount=${report.amountClaimed * 1000}`);
-          const invoiceData = await invoiceResponse.json();
-          
-          if (invoiceData.pr) {
-            setInvoice(invoiceData.pr);
-          } else {
-            throw new Error('Failed to get invoice');
-          }
-        }
+      if (!invoiceUrl) {
+        throw new Error('Invalid Lightning address format');
       }
+      
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const lnurlResponse = await fetch(invoiceUrl, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      clearTimeout(timeout);
+      
+      if (!lnurlResponse.ok) {
+        throw new Error(`HTTP ${lnurlResponse.status}: ${lnurlResponse.statusText}`);
+      }
+      
+      const lnurlData = await lnurlResponse.json();
+      
+      // Validate response has required fields
+      if (!lnurlData.callback) {
+        throw new Error('Invalid LNURL response: missing callback');
+      }
+      
+      // Validate callback URL
+      const callbackValidation = new URL(lnurlData.callback);
+      if (!['http:', 'https:'].includes(callbackValidation.protocol)) {
+        throw new Error('Invalid callback protocol');
+      }
+      
+      // Request invoice with amount in millisats
+      const invoiceController = new AbortController();
+      const invoiceTimeout = setTimeout(() => invoiceController.abort(), 10000);
+      
+      const invoiceResponse = await fetch(
+        `${lnurlData.callback}?amount=${report.amountClaimed * 1000}`,
+        {
+          signal: invoiceController.signal,
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      );
+      clearTimeout(invoiceTimeout);
+      
+      if (!invoiceResponse.ok) {
+        throw new Error(`Invoice request failed: HTTP ${invoiceResponse.status}`);
+      }
+      
+      const invoiceData = await invoiceResponse.json();
+      
+      if (!invoiceData.pr) {
+        throw new Error('No invoice returned');
+      }
+      
+      // Validate the invoice before accepting it
+      const validation = validateLightningInvoice(
+        invoiceData.pr,
+        report.amountClaimed,
+        user?.pubkey
+      );
+      
+      if (!validation.valid) {
+        throw new Error(validation.error || 'Invalid invoice');
+      }
+      
+      setInvoice(invoiceData.pr);
+      
     } catch (error) {
       console.error('Failed to request invoice:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
       toast({
         title: 'Invoice Request Failed',
-        description: 'Could not get an invoice from the creator. Please try again.',
+        description: `Could not get invoice: ${errorMessage}`,
         variant: 'destructive',
       });
+      
+      logPaymentFailure(user?.pubkey || '', report.amountClaimed, errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -121,6 +193,24 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
 
   const handlePayment = async () => {
     if (!invoice && !isTestMode) return;
+
+    // Log payment attempt
+    logPaymentAttempt(
+      user?.pubkey || '',
+      report.amountClaimed,
+      campaignId
+    );
+
+    // Check if amount requires extra confirmation
+    if (report.amountClaimed > SECURITY_CONFIG.payment.confirmationThreshold && !isTestMode) {
+      const confirmed = window.confirm(
+        `This payment of ${formatSats(report.amountClaimed)} exceeds the confirmation threshold. Are you sure you want to proceed?`
+      );
+      if (!confirmed) {
+        logPaymentFailure(user?.pubkey || '', report.amountClaimed, 'User cancelled high-value payment');
+        return;
+      }
+    }
 
     setIsProcessing(true);
 
@@ -237,21 +327,48 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Creator Info */}
-            <div className="p-3 bg-muted/50 rounded-lg space-y-1">
-              <p className="text-sm">
-                <strong>Creator:</strong> {creatorAuthor.data?.metadata?.name || 'Anonymous'}
-              </p>
-              <p className="text-sm">
-                <strong>Amount:</strong> {formatSats(report.amountClaimed)}
-              </p>
-              <p className="text-sm">
-                <strong>Platform:</strong> {report.platform}
-              </p>
-              {lightningAddress && (
+            {/* Creator Info with Security Status */}
+            <div className="space-y-3">
+              <div className="p-3 bg-muted/50 rounded-lg space-y-1">
                 <p className="text-sm">
-                  <strong>Lightning:</strong> {lightningAddress}
+                  <strong>Creator:</strong> {creatorAuthor.data?.metadata?.name || 'Anonymous'}
                 </p>
+                <p className="text-sm">
+                  <strong>Amount:</strong> {formatSats(report.amountClaimed)}
+                </p>
+                <p className="text-sm">
+                  <strong>Platform:</strong> {report.platform}
+                </p>
+                {lightningAddress && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm">
+                      <strong>Lightning:</strong> {lightningAddress}
+                    </p>
+                    {(() => {
+                      const validation = validateLightningAddress(lightningAddress);
+                      return validation.valid ? (
+                        <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-orange-600 border-orange-200">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Unverified
+                        </Badge>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+              
+              {report.amountClaimed > SECURITY_CONFIG.payment.confirmationThreshold && (
+                <Alert className="border-orange-200">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    High-value payment ({formatSats(report.amountClaimed)}): Additional confirmation required
+                  </AlertDescription>
+                </Alert>
               )}
             </div>
 
