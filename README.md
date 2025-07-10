@@ -1,10 +1,11 @@
-# Nostr Creator Economy Platform
+# Paper Crate
 
 A decentralized influencer micropayment platform that connects businesses with content creators for authentic social media campaigns. Built on the Nostr protocol with Bitcoin Lightning Network payments.
 
 ## 🚀 Features
 
 ### For Businesses
+
 - **Campaign Management**: Create targeted campaigns with custom payment rates
 - **Creator Discovery**: Browse and approve creator applications
 - **Performance Tracking**: Real-time metrics and ROI analytics
@@ -14,6 +15,7 @@ A decentralized influencer micropayment platform that connects businesses with c
 - **Lightning Integration**: Connect wallets for automatic payments
 
 ### For Creators
+
 - **Campaign Browser**: Discover active campaigns with filtering and search
 - **Application System**: Apply to campaigns with platform credentials
 - **Performance Reports**: Submit post metrics to claim earnings
@@ -45,12 +47,14 @@ See [NIP.md](./NIP.md) for detailed specifications.
 ## 🎯 How It Works
 
 ### User Onboarding
+
 1. **Login** with any Nostr-compatible wallet or browser extension
 2. **Complete Profile** with name, bio, and profile picture
 3. **Connect Social Platforms** (creators) or setup payment wallet (businesses)
 4. **Configure Settings** including Lightning wallet and relay preferences
 
 ### Campaign Flow
+
 1. **Business** creates a campaign with payment rates and requirements
 2. **Creators** browse campaigns and submit applications with platform credentials
 3. **Business** reviews and approves creator applications
@@ -58,6 +62,7 @@ See [NIP.md](./NIP.md) for detailed specifications.
 5. **Business** validates metrics and processes Lightning payments
 
 ### Payment Model
+
 - Pay-per-engagement micropayments (likes, shares, comments, zaps)
 - Transparent rate structure set by businesses
 - Instant verification via Lightning Network
@@ -97,6 +102,7 @@ npm run nsite:verify
 ```
 
 Your site will be live on Nostr and accessible through:
+
 - **njump.me** with your npub
 - **Nostr clients** that support long-form content
 - **Search tags**: creator-economy, nostr, bitcoin, lightning
@@ -117,6 +123,7 @@ npm run deploy
 ## 🌐 Platform Integration
 
 ### Supported Platforms
+
 - **Nostr**: Native integration with zaps and reactions
 - **Twitter**: API integration for metrics collection
 - **Instagram**: Basic Display API for engagement data
@@ -126,6 +133,7 @@ npm run deploy
 - **LinkedIn**: API for professional content tracking
 
 ### Metric Collection
+
 - **Nostr**: Query reactions (kind 7), reposts (kind 6/16), zaps (kind 9735)
 - **Other Platforms**: API polling for likes, shares, comments, views
 
@@ -145,12 +153,14 @@ npm run deploy
 ## 🚀 Getting Started
 
 ### Quick Start
+
 1. **Connect Wallet**: Use any Nostr-compatible wallet or browser extension (Alby, Mutiny, Zeus, etc.)
 2. **Complete Onboarding**: Follow the guided setup to complete your profile
 3. **Choose Role**: Switch between Business and Creator dashboards
 4. **Start Creating/Earning**: Create campaigns or apply to start earning
 
 ### Profile Management
+
 - **Edit Profile**: Update your Nostr metadata (name, bio, picture, banner)
 - **Social Platforms**: Connect Twitter, Instagram, TikTok, and other accounts
 - **Lightning Wallet**: Connect via Nostr Wallet Connect (NWC) for payments
@@ -158,12 +168,14 @@ npm run deploy
 - **Identity Verification**: Set up NIP-05 verification and Lightning addresses
 
 ### For Businesses
+
 - Create campaigns with custom payment rates per engagement type
 - Review creator applications with platform credentials and follower counts
 - Track campaign performance with real-time analytics
 - Process payments automatically via connected Lightning wallet
 
 ### For Creators
+
 - Browse active campaigns with advanced filtering
 - Apply with verified social media accounts and follower metrics
 - Submit performance reports to claim earnings
