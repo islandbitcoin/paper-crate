@@ -1,21 +1,10 @@
 {
-  "name": "Nostr Creator Economy",
-  "short_name": "Creator Economy",
+  "name": "Paper Crate",
+  "short_name": "Paper Crate",
   "description": "A decentralized platform connecting businesses with content creators for authentic social media campaigns.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#8b5cf6",
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "icons": []
 }
