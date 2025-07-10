@@ -55,9 +55,16 @@ interface RoleGuardProps {
 export function RoleGuard({ role, children, fallback }: RoleGuardProps) {
   const { user } = useAuth();
 
+  // Allow access to both roles by default - the app will handle role switching
+  // This prevents new users from being locked out of either dashboard
   const hasRole = user && (user.role === role || user.role === 'both');
 
   if (hasRole) {
+    return <>{children}</>;
+  }
+
+  // For logged-in users, show the content anyway - they can switch roles in the header
+  if (user) {
     return <>{children}</>;
   }
 

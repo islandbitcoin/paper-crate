@@ -1,3 +1,8 @@
+// Import Buffer polyfill before anything else
+import { Buffer } from 'buffer';
+(globalThis as any).Buffer = Buffer;
+(window as any).Buffer = Buffer;
+
 import { createRoot } from 'react-dom/client';
 
 // Import polyfills first

@@ -34,9 +34,19 @@ export default defineConfig(() => ({
   },
   define: {
     global: 'globalThis',
-    Buffer: ['buffer', 'Buffer'],
+    'process.env': {},
   },
   optimizeDeps: {
     include: ['buffer', 'events', 'util', 'stream-browserify'],
+  },
+  build: {
+    rollupOptions: {
+      external: [],
+      output: {
+        globals: {
+          'buffer': 'Buffer',
+        },
+      },
+    },
   },
 }));

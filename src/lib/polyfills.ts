@@ -3,14 +3,24 @@
  */
 import { Buffer } from 'buffer';
 
-// Make Buffer available globally
+// Make Buffer available globally with more aggressive polyfilling
 if (typeof globalThis !== 'undefined') {
-  (globalThis as typeof globalThis & { Buffer: typeof Buffer }).Buffer = Buffer;
+  (globalThis as any).Buffer = Buffer;
+  (globalThis as any).global = globalThis;
 }
 
 if (typeof window !== 'undefined') {
-  (window as typeof window & { Buffer: typeof Buffer; global: typeof window }).Buffer = Buffer;
-  (window as typeof window & { Buffer: typeof Buffer; global: typeof window }).global = window;
+  (window as any).Buffer = Buffer;
+  (window as any).global = window;
+}
+
+// Ensure process.env exists for compatibility
+if (typeof globalThis !== 'undefined' && !(globalThis as any).process) {
+  (globalThis as any).process = { env: {} };
+}
+
+if (typeof window !== 'undefined' && !(window as any).process) {
+  (window as any).process = { env: {} };
 }
 
 /**
