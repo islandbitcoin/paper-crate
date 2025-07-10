@@ -34,6 +34,7 @@ import { useCampaignsByBusiness } from '@/hooks/useCampaigns';
 import { useCreatorApplications } from '@/hooks/useCampaignApplications';
 import { useCreatorReports } from '@/hooks/usePerformanceReports';
 import { formatSats } from '@/lib/campaign-utils';
+import { PrivacySettingsComponent } from '@/components/PrivacySettings';
 
 
 export function Profile() {
@@ -247,6 +248,7 @@ export function Profile() {
         <TabsList>
           <TabsTrigger value="identity">Identity</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -407,6 +409,10 @@ export function Profile() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="privacy" className="space-y-6">
+          <PrivacySettingsComponent />
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-6">

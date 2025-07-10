@@ -21,6 +21,7 @@ import { formatSats } from '@/lib/campaign-utils';
 import { sanitizeTitle, sanitizeDescription } from '@/lib/security/sanitization';
 import { isValidBudget, isValidPlatform } from '@/lib/security/validation';
 import { useAuth } from '@/hooks/useAuth';
+import { logDataAccess } from '@/lib/security/monitoring';
 
 const campaignSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title too long')
@@ -156,6 +157,9 @@ export function CreateCampaignDialog({ open, onOpenChange }: CreateCampaignDialo
     if (data.maxPosts) {
       tags.push(['max_posts', data.maxPosts.toString()]);
     }
+
+    // Log campaign creation
+    logDataAccess(user.pubkey, 'campaign', 'write', campaignId);
 
     createEvent(
       {

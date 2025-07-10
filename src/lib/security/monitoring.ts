@@ -16,7 +16,21 @@ export type SecurityEventType =
   | 'auth_timeout'
   | 'auth_role_switch'
   | 'permission_denied'
-  | 'suspicious_activity';
+  | 'suspicious_activity'
+  | 'data_encrypted'
+  | 'data_decrypted'
+  | 'encryption_failed'
+  | 'decryption_failed'
+  | 'secure_storage_write'
+  | 'secure_storage_read'
+  | 'secure_storage_remove'
+  | 'secure_storage_clear'
+  | 'secure_storage_cleanup'
+  | 'secure_storage_error'
+  | 'privacy_settings_updated'
+  | 'data_access'
+  | 'data_export'
+  | 'data_deletion';
 
 export interface SecurityEvent {
   type: SecurityEventType;
@@ -254,5 +268,46 @@ export function logPermissionDenied(
     userId,
     details: { permission, resource },
     severity: 'medium',
+  });
+}
+
+export function logDataAccess(
+  userId: string,
+  dataType: string,
+  operation: 'read' | 'write' | 'delete',
+  resourceId?: string
+): void {
+  securityMonitor.logEvent({
+    type: 'data_access',
+    userId,
+    details: { dataType, operation, resourceId },
+    severity: 'low',
+  });
+}
+
+export function logDataExport(
+  userId: string,
+  dataTypes: string[],
+  format: string
+): void {
+  securityMonitor.logEvent({
+    type: 'data_export',
+    userId,
+    details: { dataTypes, format, count: dataTypes.length },
+    severity: 'medium',
+  });
+}
+
+export function logDataDeletion(
+  userId: string,
+  dataType: string,
+  count: number,
+  permanent: boolean
+): void {
+  securityMonitor.logEvent({
+    type: 'data_deletion',
+    userId,
+    details: { dataType, count, permanent },
+    severity: permanent ? 'high' : 'medium',
   });
 }
