@@ -7,9 +7,17 @@
     "dev": "npm i && vite",
     "build": "npm i && vite build && cp dist/index.html dist/404.html",
     "test": "npm i && tsc -p tsconfig.app.json --noEmit && eslint && vitest run && vite build",
-    "deploy": "npm run build && npx -y nostr-deploy-cli deploy --skip-setup"
+    "deploy": "npm run build && npx -y nostr-deploy-cli deploy --skip-setup",
+    "deploy:nsite": "npm run build && npx nsite publish",
+    "deploy:nsite:full": "./scripts/deploy-nsite.sh",
+    "nsite:init": "npx nsite init",
+    "nsite:build": "npm run build && npx nsite build",
+    "nsite:publish": "npx nsite publish",
+    "nsite:serve": "npx nsite serve",
+    "nsite:verify": "node scripts/verify-deployment.js"
   },
   "dependencies": {
+    "@getalby/sdk": "^5.1.1",
     "@hookform/resolvers": "^3.9.0",
     "@nostrify/nostrify": "npm:@jsr/nostrify__nostrify@^0.46.1",
     "@nostrify/react": "npm:@jsr/nostrify__react@^0.2.5",
@@ -41,6 +49,7 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
     "@tanstack/react-query": "^5.56.2",
+    "@tanstack/react-table": "^8.21.3",
     "@unhead/addons": "^2.0.10",
     "@unhead/react": "^2.0.10",
     "class-variance-authority": "^0.7.1",
@@ -62,8 +71,10 @@
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^11.1.0",
     "vaul": "^0.9.3",
-    "zod": "^3.25.71"
+    "zod": "^3.25.71",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
@@ -72,21 +83,25 @@
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react-swc": "^3.5.0",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react-swc": "^3.10.2",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "jsdom": "^26.1.0",
+    "nsite": "^0.0.6",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
-    "typescript": "^5.5.3",
+    "typescript": "^5.8.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^6.3.5",
-    "vitest": "^3.1.4"
+    "vite": "^5.4.19",
+    "vitest": "^3.1.4",
+    "ws": "^8.18.3"
   }
 }

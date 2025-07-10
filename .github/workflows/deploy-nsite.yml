@@ -1,0 +1,75 @@
+name: Deploy to Nostr via nsite
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Deploy to Nostr with nsite
+      env:
+        NOSTR_PRIVATE_KEY: ${{ secrets.NOSTR_PRIVATE_KEY }}
+      run: |
+        echo "🚀 Deploying Nostr Creator Economy to Nostr..."
+        npx nsite publish
+        
+    - name: Deployment Summary
+      run: |
+        echo "## 🎉 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Your Nostr Creator Economy platform has been deployed to Nostr!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Access Your Site" >> $GITHUB_STEP_SUMMARY
+        echo "- Search for tags: \`creator-economy\`, \`nostr\`, \`bitcoin\`" >> $GITHUB_STEP_SUMMARY
+        echo "- Use njump.me with your npub" >> $GITHUB_STEP_SUMMARY
+        echo "- Access through Nostr clients that support nsite" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Relays" >> $GITHUB_STEP_SUMMARY
+        echo "- relay.nostr.band" >> $GITHUB_STEP_SUMMARY
+        echo "- relay.damus.io" >> $GITHUB_STEP_SUMMARY
+        echo "- nos.lol" >> $GITHUB_STEP_SUMMARY
+        echo "- relay.snort.social" >> $GITHUB_STEP_SUMMARY
+        echo "- nostr.wine" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "## ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The deployment to Nostr failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
+        echo "- Verify NOSTR_PRIVATE_KEY secret is set correctly" >> $GITHUB_STEP_SUMMARY
+        echo "- Check relay connectivity" >> $GITHUB_STEP_SUMMARY
+        echo "- Review build logs for errors" >> $GITHUB_STEP_SUMMARY

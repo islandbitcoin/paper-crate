@@ -23,7 +23,7 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
   // Update refs when config changes
   useEffect(() => {
     relayUrl.current = config.relayUrl;
-    queryClient.resetQueries();
+    queryClient.invalidateQueries();
   }, [config.relayUrl, queryClient]);
 
   // Initialize NPool only once
@@ -33,6 +33,29 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
         return new NRelay1(url);
       },
       reqRouter(filters) {
+        // For kind 3 queries (follow lists), query multiple relays for better coverage
+        const isFollowQuery = filters.some(filter => filter.kinds?.includes(3));
+        
+        if (isFollowQuery) {
+          // Query multiple relays for follower counts to get more complete data
+          const relaysToQuery = new Map<string, typeof filters>();
+          
+          // Always include the selected relay
+          relaysToQuery.set(relayUrl.current, filters);
+          
+          // Add preset relays for better coverage (up to 4 additional)
+          let additionalRelays = 0;
+          for (const { url } of (presetRelays ?? [])) {
+            if (url !== relayUrl.current && additionalRelays < 4) {
+              relaysToQuery.set(url, filters);
+              additionalRelays++;
+            }
+          }
+          
+          return relaysToQuery;
+        }
+        
+        // For other queries, use only the selected relay
         return new Map([[relayUrl.current, filters]]);
       },
       eventRouter(_event: NostrEvent) {
