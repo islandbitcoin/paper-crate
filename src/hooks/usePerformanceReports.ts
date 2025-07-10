@@ -176,7 +176,7 @@ export function useCreatorReports(creatorPubkey?: string) {
 
 export function useBusinessReports(businessPubkey?: string) {
   const { nostr } = useNostr();
-  const { addReport, updateReport } = useCampaignStore();
+  const { addReport } = useCampaignStore();
 
   return useQuery({
     queryKey: ['business-reports', businessPubkey],

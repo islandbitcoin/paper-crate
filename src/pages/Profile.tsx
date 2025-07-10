@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { ArrowLeft, Settings, ExternalLink, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Settings, ExternalLink, Copy, Check, TestTube } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/useToast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useTestMode } from '@/hooks/useTestMode';
 import { genUserName } from '@/lib/genUserName';
 import { EditProfileForm } from '@/components/EditProfileForm';
 import { RelaySelector } from '@/components/RelaySelector';
@@ -36,6 +39,7 @@ import { formatSats } from '@/lib/campaign-utils';
 export function Profile() {
   const { user, metadata } = useCurrentUser();
   const { toast } = useToast();
+  const { isTestMode, toggleTestMode } = useTestMode();
   const navigate = useNavigate();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -332,6 +336,43 @@ export function Profile() {
           <WalletConnection userRole="creator" />
 
           <PaymentTest />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Developer Settings</CardTitle>
+              <CardDescription>
+                Options for testing and development
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <TestTube className="h-4 w-4 text-orange-600" />
+                    <Label htmlFor="test-mode" className="font-medium">
+                      Test Mode
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Enable test mode to simulate Lightning payments without real transactions
+                  </p>
+                </div>
+                <Switch
+                  id="test-mode"
+                  checked={isTestMode}
+                  onCheckedChange={toggleTestMode}
+                />
+              </div>
+              
+              {isTestMode && (
+                <div className="p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                  <p className="text-sm text-orange-800 dark:text-orange-200">
+                    Test mode is active. All payments will be simulated. Perfect for testing the complete flow!
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

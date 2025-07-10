@@ -14,7 +14,7 @@ interface WebLNProvider {
 interface SendPaymentResponse {
   preimage: string;
   paymentRequest?: string;
-  route?: any;
+  route?: unknown;
 }
 
 interface MakeInvoiceResponse {

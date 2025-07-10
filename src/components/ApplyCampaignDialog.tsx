@@ -52,8 +52,6 @@ export function ApplyCampaignDialog({ campaign, open, onOpenChange }: ApplyCampa
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       message: '',
-      platforms: {},
-      followers: {},
     },
   });
 

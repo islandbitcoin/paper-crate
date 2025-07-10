@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Zap, Loader2, Wallet } from 'lucide-react';
+import { Zap, Loader2, Wallet, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 
 import { useNWC } from '@/hooks/useNWC';
 import { useWebLN } from '@/hooks/useWebLN';
+import { useTestMode } from '@/hooks/useTestMode';
 import { useToast } from '@/hooks/useToast';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
@@ -37,6 +38,7 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
   
   const { isConnected: nwcConnected, sendPayment: sendNWCPayment } = useNWC();
   const { isAvailable: webLNAvailable, sendPayment: sendWebLNPayment } = useWebLN();
+  const { isTestMode, addSimulatedPayment } = useTestMode();
   const { toast } = useToast();
   const { mutate: publishEvent } = useNostrPublish();
   const updateCampaignSpent = useCampaignStore(state => state.updateCampaignSpent);
@@ -118,31 +120,51 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
   };
 
   const handlePayment = async () => {
-    if (!invoice) return;
+    if (!invoice && !isTestMode) return;
 
     setIsProcessing(true);
 
     try {
-      let result = null;
+      let result: { preimage: string } | null = null;
       
-      // Use selected payment method
-      if (paymentMethod === 'webln') {
-        result = await sendWebLNPayment(invoice);
-      } else {
-        // NWC payment
-        if (!nwcConnected) {
-          toast({
-            title: 'Wallet Not Connected',
-            description: 'Please connect your NWC wallet in Profile → Settings first.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        result = await sendNWCPayment({
-          invoice,
+      // Test mode simulation
+      if (isTestMode) {
+        // Simulate payment delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const testPreimage = `test_${report.id}_${Date.now()}`;
+        result = { preimage: testPreimage };
+        
+        // Add to simulated payments
+        addSimulatedPayment({
+          reportId: report.id,
           amount: report.amountClaimed,
-          description: `Payment for ${report.platform} post`
         });
+        
+        toast({
+          title: 'Test Payment Simulated',
+          description: `Test payment of ${formatSats(report.amountClaimed)} completed`,
+        });
+      } else {
+        // Real payment methods
+        if (paymentMethod === 'webln') {
+          result = await sendWebLNPayment(invoice);
+        } else {
+          // NWC payment
+          if (!nwcConnected) {
+            toast({
+              title: 'Wallet Not Connected',
+              description: 'Please connect your NWC wallet in Profile → Settings first.',
+              variant: 'destructive',
+            });
+            return;
+          }
+          result = await sendNWCPayment({
+            invoice,
+            amount: report.amountClaimed,
+            description: `Payment for ${report.platform} post`
+          });
+        }
       }
       
       if (result && result.preimage) {
@@ -233,8 +255,18 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
               )}
             </div>
 
+            {/* Test Mode Notice */}
+            {isTestMode && (
+              <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950">
+                <TestTube className="h-4 w-4" />
+                <AlertDescription>
+                  Test mode is enabled. Payments will be simulated without real Lightning transactions.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Invoice Section */}
-            {!invoice ? (
+            {!invoice && !isTestMode ? (
               <div className="space-y-3">
                 {lightningAddress ? (
                   <Button
@@ -258,6 +290,26 @@ export function PayCreatorButton({ report, campaignId }: PayCreatorButtonProps) 
                     </AlertDescription>
                   </Alert>
                 )}
+              </div>
+            ) : isTestMode ? (
+              <div className="space-y-3">
+                <Button
+                  onClick={handlePayment}
+                  disabled={isProcessing}
+                  className="w-full"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Simulating Payment...
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="h-4 w-4 mr-2" />
+                      Simulate Test Payment
+                    </>
+                  )}
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
